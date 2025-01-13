@@ -9,6 +9,7 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.ext.SdkExtensions.getExtensionVersion
+import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
@@ -258,7 +259,7 @@ class Utils {
                     val saveFileNamePrefix: String =
                         destinationSaveFilesInfo.elementAt(index).saveFileNamePrefix
                     val documentFileNewFile = outputFolder!!.createFile(
-                        sourceFileMimeType ?: "application/random", saveFileNamePrefix
+                        sourceFileMimeType ?: "application/octet-stream", saveFileNamePrefix
                     )
                     val destinationFileUri: Uri = documentFileNewFile!!.uri
                     savedFilesPaths.add(withContext(Dispatchers.IO) {
@@ -315,6 +316,50 @@ class Utils {
         Log.d(LOG_TAG, "Canceled File Saving")
     }
 
+    suspend fun deleteMultipleFilesOnBackground(
+        destinationDeleteFilesInfo: List<DestinationDeleteFileInfo>,
+        resultCallback: MethodChannel.Result?,
+        context: Context,
+    ): List<String> {
+        val deletedFilesPaths: MutableList<String> = mutableListOf()
+        val uiScope = CoroutineScope(Dispatchers.Main)
+        withContext(uiScope.coroutineContext) {
+            try {
+                Log.d(LOG_TAG, "Deleting file on background...")
+                destinationDeleteFilesInfo.indices.map { index ->
+                    yield()
+                    val deleteFileUri = destinationDeleteFilesInfo.elementAt(index).fileUri
+                    if (DocumentsContract.deleteDocument(context.contentResolver, Uri.parse(deleteFileUri))) {
+                      deletedFilesPaths.add(deleteFileUri)
+                    }
+                }
+                Log.d(LOG_TAG, "...deleted file on background, result: $deletedFilesPaths")
+            } catch (e: SecurityException) {
+                Log.e(LOG_TAG, "deleteMultipleFilesOnBackground", e)
+                finishWithError(
+                    "security_exception", e.localizedMessage, e.toString(), resultCallback
+                )
+            } catch (e: Exception) {
+                Log.e(LOG_TAG, "deleteMultipleFilesOnBackground failed", e)
+                finishWithError(
+                    "delete_file_failed", e.localizedMessage, e.toString(), resultCallback
+                )
+            } catch (e: Error) {
+                Log.e(LOG_TAG, "deleteMultipleFilesOnBackground failed", e)
+                finishWithError(
+                    "delete_file_failed", e.localizedMessage, e.toString(), resultCallback
+                )
+            }
+        }
+        return deletedFilesPaths
+    }
+
+    fun cancelDelete(
+    ) {
+        fileDeleteJob?.cancel()
+        Log.d(LOG_TAG, "Canceled File Delete")
+    }
+
     fun cancelDirectoryDocumentsPicker(
     ) {
         directoryDocumentsPickerJob?.cancel()
@@ -343,6 +388,10 @@ class Utils {
         if (resultCallback == fileSavingResult && fileSavingResult != null) {
             fileSavingResult = null
             println("fileSaving result cleared")
+        }
+        if (resultCallback == fileDeleteResult && fileDeleteResult != null) {
+            fileDeleteResult = null
+            println("fileDelete result cleared")
         }
         if (resultCallback == fileMetadataResult && fileMetadataResult != null) {
             fileMetadataResult = null

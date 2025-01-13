@@ -55,6 +55,13 @@ class MethodChannelPickOrSave extends PickOrSavePlatform {
   }
 
   @override
+  Future<List<String>?> fileDelete({FileDeleteParams? params}) async {
+    final List? deleted =
+        await methodChannel.invokeMethod<List?>('deleteFiles', params?.toJson());
+    return deleted?.cast<String>();
+  }
+
+  @override
   Future<FileMetadata> fileMetaData({FileMetadataParams? params}) async {
     final List? fileMetaData = await methodChannel.invokeMethod<List?>(
         'fileMetaData', params?.toJson());
@@ -327,7 +334,7 @@ class FilePickerParams {
 /// File saving types for [fileSaver].
 enum FileSavingType { single, multiple }
 
-/// Parameters for the [fileMetaData] method.
+/// Parameters for the [fileSaver] method.
 class SaveFileInfo {
   /// Path of the file to save.
   /// Provide either [filePath] or [fileData].
@@ -341,7 +348,7 @@ class SaveFileInfo {
   /// Required if [fileData] is provided.
   final String? fileName;
 
-  /// Create parameters for the [fileMetaData] method.
+  /// Create parameters for the [fileSaver] method.
   const SaveFileInfo({
     this.filePath,
     this.fileData,
@@ -365,7 +372,7 @@ class SaveFileInfo {
   // when using the print statement.
   @override
   String toString() {
-    return 'SaveFileInfo{filePath: $filePath, fileData: $fileData, fileName: $fileName}';
+    return 'SaveFileInfo{filePath: $filePath, fileName: $fileName}';
   }
 }
 
@@ -411,6 +418,55 @@ class FileSaverParams {
   @override
   String toString() {
     return 'FileSaverParams{saveFiles: $saveFiles, mimeTypesFilter: $mimeTypesFilter, localOnly: $localOnly}';
+  }
+}
+
+/// Parameters for the [fileDelete] method.
+class DeleteFileInfo {
+  /// Path of the file to delete.
+  final String filePath;
+
+  /// Create parameters for the [fileDelete] method.
+  const DeleteFileInfo({
+    required this.filePath,
+  });
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'filePath': filePath,
+    };
+  }
+
+  // Implement toString to make it easier to see information
+  // when using the print statement.
+  @override
+  String toString() {
+    return 'DeleteFileInfo{filePath: $filePath}';
+  }
+}
+
+/// Parameters for the [fileDelete] method.
+class FileDeleteParams {
+  /// DeleteFileInfo for files to delete.
+  final List<DeleteFileInfo>? deleteFiles;
+
+  /// Create parameters for the [deleteFile] method.
+  const FileDeleteParams(
+      {this.deleteFiles})
+      : assert(deleteFiles != null && deleteFiles.length != 0,
+            'provide deleteFiles with non null and non empty list');
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'deleteFiles': deleteFiles?.map((e) => e.toJson()).toList(),
+    };
+  }
+
+  // Implement toString to make it easier to see information
+  // when using the print statement.
+  @override
+  String toString() {
+    return 'FileDeleteParams{deleteFiles: $deleteFiles}';
   }
 }
 

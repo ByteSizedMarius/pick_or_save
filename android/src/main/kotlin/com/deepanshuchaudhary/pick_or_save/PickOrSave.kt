@@ -27,6 +27,8 @@ var directoryDocumentsPickingResult: MethodChannel.Result? = null
 
 var fileSavingResult: MethodChannel.Result? = null
 
+var fileDeleteResult: MethodChannel.Result? = null
+
 var fileMetadataResult: MethodChannel.Result? = null
 
 var cacheFilePathFromUriResult: MethodChannel.Result? = null
@@ -282,6 +284,59 @@ class PickOrSave(
         } catch (e: Error) {
             utils.finishWithError(
                 "saveFile_error", e.stackTraceToString(), null, filePickingResult
+            )
+        }
+    }
+
+    // For deleting single file or multiple files.
+    fun deleteFile(
+        resultCallback: MethodChannel.Result,
+        deleteFiles: List<DeleteFileInfo>?,
+    ) {
+        try {
+
+            Log.d(
+                LOG_TAG,
+                "deleteFile - IN, deleteFiles=$deleteFiles"
+            )
+
+            if (fileDeleteResult != null) {
+                utils.finishWithAlreadyActiveError(resultCallback)
+                return
+            } else {
+                fileDeleteResult = resultCallback
+//        utils.cancelDelete()
+            }
+
+            if (deleteFiles == null) {
+                utils.finishWithError(
+                    "deleteFiles_not_found",
+                    "Delete files list is null",
+                    "Delete files list is null",
+                    fileDeleteResult
+                )
+            } else if (deleteFiles.isEmpty()) {
+                utils.finishWithError(
+                    "deleteFiles_not_found",
+                    "Delete files list is empty",
+                    "Delete files list is empty",
+                    fileDeleteResult
+                )
+            } else {
+                deleteMultipleFiles(
+                    deleteFilesInfo = deleteFiles,
+                    context = activity,
+                )
+            }
+
+
+        } catch (e: Exception) {
+            utils.finishWithError(
+                "deleteFile_exception", e.stackTraceToString(), null, fileDeleteResult
+            )
+        } catch (e: Error) {
+            utils.finishWithError(
+                "deleteFile_error", e.stackTraceToString(), null, fileDeleteResult
             )
         }
     }

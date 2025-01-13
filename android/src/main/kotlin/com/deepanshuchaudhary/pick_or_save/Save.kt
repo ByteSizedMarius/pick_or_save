@@ -15,8 +15,11 @@ import java.io.File
 //private var isSourceFileTemp : Boolean = false
 private var destinationSaveFileInfo: DestinationSaveFileInfo? = null
 private var destinationSaveFilesInfo: MutableList<DestinationSaveFileInfo> = mutableListOf()
+private var destinationDeleteFileInfo: DestinationDeleteFileInfo? = null
+private var destinationDeleteFilesInfo: MutableList<DestinationDeleteFileInfo> = mutableListOf()
 
 var fileSaveJob: Job? = null
+var fileDeleteJob: Job? = null
 
 data class DestinationSaveFileInfo(
     val file: File,
@@ -46,6 +49,8 @@ data class SaveFileInfo(val filePath: String?, val fileData: ByteArray?, val fil
         result = 31 * result + fileName.hashCode()
         return result
     }
+
+    override fun toString() = "SaveFileInfo(filePath=$filePath fileName=$fileName)"
 }
 
 // For saving single file.
@@ -139,6 +144,7 @@ fun saveMultipleFiles(
 
     val begin = System.nanoTime()
 
+    destinationSaveFilesInfo.clear()
     saveFilesInfo.indices.map { index ->
 
         val saveFileInfo = saveFilesInfo.elementAt(index)
@@ -390,6 +396,102 @@ fun processMultipleSaveFile(
                 )
             }
         }
+
+        val end = System.nanoTime()
+        println("Elapsed time in nanoseconds: ${end - begin}")
+
+    }
+
+    return true
+}
+
+data class DestinationDeleteFileInfo(
+    val fileUri: String,
+)
+
+data class DeleteFileInfo(val filePath: String) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as DeleteFileInfo
+
+        if (filePath != other.filePath) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = filePath.hashCode()
+        return result
+    }
+
+    override fun toString() = "DeleteFileInfo(filePath=$filePath)"
+}
+
+// For deleting multiple files.
+fun deleteMultipleFiles(
+    deleteFilesInfo: List<DeleteFileInfo>,
+    context: Activity,
+) {
+    val utils = Utils()
+
+    val begin = System.nanoTime()
+
+    destinationDeleteFilesInfo.clear()
+    deleteFilesInfo.indices.map { index ->
+
+        val deleteFileInfo = deleteFilesInfo.elementAt(index)
+        destinationDeleteFilesInfo.add(
+            DestinationDeleteFileInfo(
+                fileUri = deleteFileInfo.filePath,
+            )
+        )
+    }
+
+    deleteMultipleFilesInDirectory(context)
+}
+
+// Delete multiple files in directory.
+fun deleteMultipleFilesInDirectory(
+    context: Activity
+): Boolean {
+
+    val coroutineScope = CoroutineScope(Dispatchers.IO)
+    fileDeleteJob = coroutineScope.launch {
+
+        val utils = Utils()
+
+        val begin = System.nanoTime()
+
+        if (destinationDeleteFilesInfo.isNotEmpty()) {
+
+            val deletedFilesPaths: List<String> = utils.deleteMultipleFilesOnBackground(
+                destinationDeleteFilesInfo, fileDeleteResult, context
+            )
+
+            if (deletedFilesPaths.isNotEmpty()) {
+                utils.finishSuccessfully(
+                    deletedFilesPaths, fileDeleteResult
+                )
+            } else {
+                utils.finishWithError(
+                    "files_delete_failed",
+                    "deleted files paths list was empty",
+                    "deleted files paths list was empty",
+                    fileDeleteResult
+                )
+            }
+
+        } else {
+            utils.finishWithError(
+                "destinationDeleteFilesInfo_not_found",
+                "destinationDeleteFilesInfo is empty",
+                "destinationDeleteFilesInfo is empty",
+                fileDeleteResult
+            )
+        }
+
 
         val end = System.nanoTime()
         println("Elapsed time in nanoseconds: ${end - begin}")

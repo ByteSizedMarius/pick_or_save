@@ -37,6 +37,14 @@ class PickOrSave {
     return PickOrSavePlatform.instance.fileSaver(params: params);
   }
 
+  /// Deletes file or files.
+  ///
+  /// Returns path of the deleted file or folder if multiple files or null if operation was cancelled.
+  /// Throws exception on error.
+  Future<List<String>?> fileDelete({FileDeleteParams? params}) {
+    return PickOrSavePlatform.instance.fileDelete(params: params);
+  }
+
   /// Get the display name and size of a file from uri.
   ///
   /// Returns [FileMetadata].

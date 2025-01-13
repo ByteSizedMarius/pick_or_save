@@ -41,6 +41,10 @@ abstract class PickOrSavePlatform extends PlatformInterface {
     throw UnimplementedError('fileSaver() has not been implemented.');
   }
 
+  Future<List<String>?> fileDelete({FileDeleteParams? params}) {
+    throw UnimplementedError('fileDelete() has not been implemented.');
+  }
+
   Future<FileMetadata> fileMetaData({FileMetadataParams? params}) {
     throw UnimplementedError('fileMetaData() has not been implemented.');
   }

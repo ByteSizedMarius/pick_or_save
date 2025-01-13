@@ -159,6 +159,11 @@ class PickOrSavePlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 directoryUri = call.argument("directoryUri"),
             )
 
+            "deleteFiles" -> pickOrSave!!.deleteFile(
+                result,
+                deleteFiles = parseMethodCallListOfDeleteFileInfoArgument(call, "deleteFiles"),
+            )
+
             "fileMetaData" -> pickOrSave!!.fileMetaData(
                 result, sourceFilePathOrUri = call.argument("filePath")
             )
@@ -264,6 +269,23 @@ class PickOrSavePlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 saveFilesList.add(saveFile)
             }
             return saveFilesList
+        }
+        return null
+    }
+
+    private fun parseMethodCallListOfDeleteFileInfoArgument(
+        call: MethodCall, arg: String
+    ): List<DeleteFileInfo>? {
+        if (call.hasArgument(arg)) {
+            val deleteFilesMapsList = call.argument<ArrayList<Map<String, Any>>>(arg)?.toList()
+            val deleteFilesList: MutableList<DeleteFileInfo> = mutableListOf()
+            deleteFilesMapsList?.forEach { it ->
+                val deleteFile = DeleteFileInfo(
+                    filePath = it["filePath"] as String,
+                )
+                deleteFilesList.add(deleteFile)
+            }
+            return deleteFilesList
         }
         return null
     }

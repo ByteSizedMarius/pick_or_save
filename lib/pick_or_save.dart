@@ -7,6 +7,8 @@ export 'src/pick_or_save_method_channel.dart'
         FileSavingType,
         SaveFileInfo,
         FileSaverParams,
+        DeleteFileInfo,
+        FileDeleteParams,
         FileMetadataParams,
         FileMetadata,
         CacheFilePathFromPathParams,
